@@ -6,6 +6,7 @@ import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import { mediaFor, type VideoSource } from '../data/courseData';
+import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import { CLAUDE_PATH } from '../utils/claudeMark';
 import { stripMarkup } from '../utils/text';
 import type { Screen } from '../types';
@@ -158,16 +159,40 @@ export function TypeWriter({ text, speed = 14 }: { text: string; speed?: number 
   );
 }
 
-function Lightbox({ open, onClose, src, video }: { open: boolean; onClose: () => void; src?: string; video?: string }) {
+/** Round magnifier badge that fades in over its (position: relative) parent on hover / keyboard focus. Always visible on touch screens. */
+function MagnifyOverlay() {
+  return (
+    <Box
+      aria-hidden
+      className="tx-magnify"
+      sx={{
+        position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none', opacity: 0, background: 'rgba(8,12,28,.28)', transition: 'opacity .25s',
+        '@media (hover: none)': { opacity: 1, background: 'transparent', placeItems: 'end end', p: 1.5 },
+      }}
+    >
+      <Box sx={{ width: 56, height: 56, borderRadius: '50%', display: 'grid', placeItems: 'center', color: '#fff', bgcolor: 'rgba(10,16,34,.72)', border: '1px solid rgba(255,255,255,.35)', backdropFilter: 'blur(6px)', boxShadow: '0 10px 30px rgba(0,0,0,.4)', transform: 'scale(.85)', transition: 'transform .3s cubic-bezier(.34,1.56,.64,1)', '.tx-media:hover &, .tx-media:focus-visible &': { transform: 'scale(1)' }, '@media (hover: none)': { width: 40, height: 40, transform: 'none' } }}>
+        <PlayArrowRoundedIcon sx={{ fontSize: 30, '@media (hover: none)': { fontSize: 22 },color:"#F5B93F" }} />
+      </Box>
+    </Box>
+  );
+}
+
+type LightboxItem = { src?: string; video?: VideoSource };
+
+/** Full-screen viewer. Videos start playing as soon as it opens, and stop when it closes (the content unmounts). */
+function Lightbox({ open, onClose, src, video }: { open: boolean; onClose: () => void; src?: string; video?: VideoSource }) {
+  const shadow = '0 20px 60px rgba(0,0,0,.5)';
   return (
     <Dialog open={open} onClose={onClose} maxWidth={false} PaperProps={{ sx: { background: 'transparent', boxShadow: 'none', border: 0, overflow: 'visible', m: 1 } }}>
       <IconButton onClick={onClose} aria-label="Close" sx={{ position: 'absolute', top: -10, right: -10, zIndex: 2, bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.main', color: 'primary.contrastText' } }}>
         <CloseRoundedIcon />
       </IconButton>
-      {video ? (
-        <Box component="video" src={video} controls autoPlay playsInline sx={{ maxWidth: '92vw', maxHeight: '86vh', borderRadius: '14px', boxShadow: '0 20px 60px rgba(0,0,0,.5)' }} />
+      {video?.kind === 'youtube' ? (
+        <Box component="iframe" src={`${video.embed}&autoplay=1`} title="Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" sx={{ display: 'block', border: 0, width: 'min(92vw, calc(86vh * 16 / 9))', aspectRatio: '16 / 9', borderRadius: '14px', boxShadow: shadow, bgcolor: '#000' }} />
+      ) : video ? (
+        <Box component="video" src={video.src} controls autoPlay playsInline sx={{ display: 'block', maxWidth: '92vw', maxHeight: '86vh', borderRadius: '14px', boxShadow: shadow, bgcolor: '#000' }} />
       ) : (
-        <Box component="img" src={src} alt="" sx={{ maxWidth: '92vw', maxHeight: '86vh', borderRadius: '14px', boxShadow: '0 20px 60px rgba(0,0,0,.5)' }} />
+        <Box component="img" src={src} alt="" sx={{ maxWidth: '92vw', maxHeight: '86vh', borderRadius: '14px', boxShadow: shadow }} />
       )}
     </Dialog>
   );
@@ -208,24 +233,30 @@ function Placeholder({ screen }: { screen?: Screen }) {
   );
 }
 
-/** Responsive 16:9 video: a YouTube embed, or a file from /public/videos with the browser's own controls. */
-function VideoPlayer({ video, title, onFail }: { video: VideoSource; title: string; onFail: () => void }) {
-  const frame = (t: Theme) => ({ position: 'relative' as const, width: '100%', overflow: 'hidden', borderRadius: { xs: '12px', sm: '16px' }, border: `1px solid ${t.tx.line}`, boxShadow: `0 24px 60px ${t.tx.glow}`, bgcolor: '#000', lineHeight: 0 });
-  if (video.kind === 'youtube') {
-    return (
-      <Box sx={{ display: 'grid', gap: 0.75 }}>
-        <Box sx={(t) => ({ ...frame(t), aspectRatio: '16 / 9' })}>
-          <Box component="iframe" src={video.embed} title={title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
-        </Box>
-        <Typography component="a" href={video.watch} target="_blank" rel="noopener noreferrer" variant="caption" color="text.secondary" sx={{ justifySelf: 'end', display: 'inline-flex', alignItems: 'center', gap: 0.5, fontWeight: 700, textDecoration: 'none', '&:hover': { color: 'secondary.main' }, '& svg': { fontSize: 14 } }}>
-          Watch on YouTube <OpenInNewRoundedIcon />
-        </Typography>
-      </Box>
-    );
-  }
+/**
+ * Video preview that behaves like the screenshots: a still frame with a magnifier on hover.
+ * Nothing plays here - clicking it opens the lightbox, where the video autoplays.
+ */
+function VideoPlayer({ video, title, onFail, onOpen }: { video: VideoSource; title: string; onFail: () => void; onOpen: () => void }) {
   return (
-    <Box sx={(t) => frame(t)}>
-      <Box component="video" src={video.src} controls playsInline preload="metadata" onError={onFail} sx={{ width: '100%', maxHeight: '78dvh', display: 'block', bgcolor: '#000' }} />
+    <Box
+      component="button"
+      type="button"
+      className="tx-media"
+      onClick={onOpen}
+      aria-label={`Play video: ${title}`}
+      sx={(t) => ({
+        all: 'unset', cursor: 'zoom-in', position: 'relative', display: 'block', width: '100%', boxSizing: 'border-box', overflow: 'hidden', aspectRatio: '16 / 9', borderRadius: '16px', border: `1px solid ${t.tx.line}`, boxShadow: `0 24px 60px ${t.tx.glow}`, bgcolor: '#000',
+        '&:focus-visible': { outline: `2px solid ${t.tx.hl}`, outlineOffset: 3 }, '&:hover .tx-thumb': { transform: 'scale(1.015)' }, '&:hover .tx-magnify, &:focus-visible .tx-magnify': { opacity: 1 },
+      })}
+    >
+      {video.kind === 'youtube' ? (
+        <Box className="tx-thumb" component="img" src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`} alt="" draggable={false} onError={onFail} sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform .6s cubic-bezier(.2,.8,.2,1)' }} />
+      ) : (
+        // "#t=0.1" makes the browser paint a real frame as the thumbnail instead of a black box.
+        <Box className="tx-thumb" component="video" src={`${video.src}#t=0.1`} muted playsInline preload="metadata" tabIndex={-1} onError={onFail} sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none', transition: 'transform .6s cubic-bezier(.2,.8,.2,1)' }} />
+      )}
+      <MagnifyOverlay />
     </Box>
   );
 }
@@ -235,25 +266,26 @@ export function MediaBlock({ screen }: { screen: Screen }) {
   const media = mediaFor(screen);
   const [failed, setFailed] = useState<Record<string, boolean>>({});
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
-  const [open, setOpen] = useState<{ src?: string } | null>(null);
+  const [open, setOpen] = useState<LightboxItem | null>(null);
   if (!media) return <Placeholder screen={screen} />;
   const images = media.images.filter((s) => !failed[s]);
   const video = media.video && !failed['video'] ? media.video : undefined;
   if (!images.length && !video) return <Placeholder screen={screen} />;
   return (
     <Box sx={{ my: 2.5, display: 'grid', gap: 2 }}>
-      {video && <VideoPlayer video={video} title={screen.heading ? stripMarkup(screen.heading) : screen.tool || 'Output video'} onFail={() => setFailed((f) => ({ ...f, video: true }))} />}
+      {video && <VideoPlayer video={video} title={screen.heading ? stripMarkup(screen.heading) : screen.tool || 'Output video'} onFail={() => setFailed((f) => ({ ...f, video: true }))} onOpen={() => setOpen({ video })} />}
       {images.map((src) => (
         <Box
           key={src}
           component="button"
           type="button"
+          className="tx-media"
           onClick={() => setOpen({ src })}
           aria-label="Enlarge image"
           sx={(t) => ({
-            all: 'unset', cursor: 'zoom-in', display: 'block', overflow: 'hidden', borderRadius: '16px', border: `1px solid ${t.tx.line}`, boxShadow: `0 24px 60px ${t.tx.glow}`, minHeight: loaded[src] ? 0 : 160,
+            all: 'unset', cursor: 'zoom-in', position: 'relative', display: 'block', boxSizing: 'border-box', overflow: 'hidden', borderRadius: '16px', border: `1px solid ${t.tx.line}`, boxShadow: `0 24px 60px ${t.tx.glow}`, minHeight: loaded[src] ? 0 : 160,
             background: loaded[src] ? 'transparent' : `linear-gradient(90deg, ${t.tx.surface}, ${t.tx.line}, ${t.tx.surface})`, backgroundSize: '800px 100%', animation: loaded[src] ? 'none' : 'txshimmer 1.3s linear infinite',
-            '&:focus-visible': { outline: `2px solid ${t.tx.hl}`, outlineOffset: 3 }, '&:hover img': { transform: 'scale(1.015)' },
+            '&:focus-visible': { outline: `2px solid ${t.tx.hl}`, outlineOffset: 3 }, '&:hover img': { transform: 'scale(1.015)' }, '&:hover .tx-magnify, &:focus-visible .tx-magnify': { opacity: 1 },
           })}
         >
           <Box
@@ -266,9 +298,10 @@ export function MediaBlock({ screen }: { screen: Screen }) {
             onError={() => setFailed((f) => ({ ...f, [src]: true }))}
             sx={{ width: '100%', display: 'block', opacity: loaded[src] ? 1 : 0, transition: 'opacity .4s, transform .6s cubic-bezier(.2,.8,.2,1)' }}
           />
+          <MagnifyOverlay />
         </Box>
       ))}
-      <Lightbox open={!!open} onClose={() => setOpen(null)} src={open?.src} />
+      <Lightbox open={!!open} onClose={() => setOpen(null)} src={open?.src} video={open?.video} />
     </Box>
   );
 }
