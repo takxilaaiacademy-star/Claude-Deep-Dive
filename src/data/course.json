@@ -268,7 +268,8 @@
             "Row 5: 4 | Q3 budget review | In Progress | High",
             "Row 6: 5 | Website content refresh | Not Started | Low",
             "This file is now sitting in your Google Drive automatically — Sheets saves as you type, no separate save step needed."
-          ]
+          ],
+          "outputVideo":"../public/videos/m02-s04.mp4"
         },
         {
           "id": "m02-s05", "type": "tool_intro", "tool": "Claude", "visuals": 1,
@@ -279,7 +280,8 @@
             "Click \"Connect\" next to it.",
             "You'll be redirected to Google's own login screen. Sign in with the same Google account you used to create your tracker, and review the permissions Claude is requesting — this is the Scope check from the Connector Audit, happening live.",
             "Approve the permissions. You're returned to Claude, and Google Drive is now connected."
-          ]
+          ],
+          "outputVideo":"../public/videos/m02-s05.mp4"
         },
         {
           "id": "m02-s06", "type": "tool_intro", "tool": "Claude", "visuals": 1,
@@ -289,7 +291,8 @@
             "Method 2 — inside a normal chat: once Google Drive is connected, you can often reference a file directly by typing @ followed by the file name (e.g. @My Project Tracker) right in your message, and selecting it from the list that appears.",
             "If neither option looks exactly like this on your screen, your interface may have updated since this was written — look for \"Add Content,\" \"Files,\" or an @ symbol near the message box, since one of these is almost certainly how your version handles it.",
             "One honest limitation worth knowing now: Claude can read and analyze your tracker through this connection, but it cannot directly edit, update, or add rows to the existing file — that's a different capability, covered when we reach Skills and Cowork later in this course."
-          ]
+          ],
+          "outputVideo":"../public/videos/m02-s06.mp4"
         },
         {
           "id": "m02-s07", "type": "prompt_and_output", "tool": "Claude", "visuals": 1,
@@ -469,7 +472,8 @@
             "For Extended Thinking: click the model name next to the send button (this opens a menu covering Model, Effort, and Thinking together) and switch the \"Thinking\" toggle on. On some interface versions, this same toggle instead appears inside the \"Search and tools\" panel — if you don't see it by the send button, check there.",
             "For Research: click the same \"Search and tools\" icon and look for a \"Research\" option — click it to enable, click again to disable. Research requires a paid plan (Pro, Max, Team, or Enterprise).",
             "You can combine these — Research automatically uses Extended Thinking internally, for example — but for this module, try them one at a time first so you can see exactly what each one does on its own."
-          ]
+          ],
+          "outputVideo":"../public/videos/m03-s04.mp4"
         },
         {
           "id": "m03-s05", "type": "prompt_and_output", "tool": "Claude", "visuals": 1,
@@ -524,7 +528,8 @@
             "You'll see a \"Researching...\" indicator — Claude is now running multiple searches and reading results, not writing a response yet. This can take anywhere from 5 to 45 minutes depending on how complex your question is.",
             "You don't need to keep the tab open — Research runs in the background. Switch to something else and come back.",
             "When it's done, you'll see a structured, citation-backed report — expand any section to see the sources behind a specific claim."
-          ]
+          ],
+          "outputVideo":"../public/videos/m03-s10.mp4"
         },
         {
           "id": "m03-s11", "type": "prompt_and_output", "tool": "Claude", "visuals": 1,
@@ -888,7 +893,8 @@
             "If you don't see \"Memory\" directly, instead go to Settings → Capabilities, and scroll to the Memory section there — this is the older (legacy) interface, and works the same way, just laid out differently.",
             "Once enabled, memory builds automatically from your conversations going forward — it does not look backward at chats from before you turned it on.",
             "To add something manually right now instead of waiting for it to build naturally, look for a pencil/edit icon in the memory view, and write a direct fact — e.g. \"I run a small business and prefer concise, no-fluff written communication.\""
-          ]
+          ],
+          "outputVideo":"../public/videos/m05-s07.mp4"
         },
         {
           "id": "m05-s08", "type": "prompt_and_output", "tool": "Claude", "visuals": 1,
@@ -920,7 +926,8 @@
             "You'll see a few creation options — choose \"Create with Claude.\" This is a short, guided conversation where Claude interviews you about the task to build the skill for you, rather than you writing instructions from scratch.",
             "Describe the repeatable task clearly — for example, \"I write a weekly client status update, always in the same format.\" Answer Claude's follow-up questions about your exact format and preferences.",
             "Once complete, save the skill. It now appears in your Skills list, ready to be used whenever a matching task comes up in future chats."
-          ]
+          ],
+          "outputVideo":"../public/videos/m05-s10.mp4"
         },
         {
           "id": "m05-s11", "type": "prompt_and_output", "tool": "Claude", "visuals": 1,
@@ -1120,7 +1127,8 @@
             "Click it to generate a public link.",
             "Anyone with that link can open and use your tool — they don't need a Claude account to use a published artifact.",
             "You can un-publish at any time from the same panel, which disables the link immediately."
-          ]
+          ],
+          "outputVideo":"../public/videos/m06-s12.mp4"
         },
         {
           "id": "m06-s13", "type": "mcq",
@@ -1504,7 +1512,8 @@
             "Click \"New task\" in the upper right, then choose \"Create with Claude\" — this starts a guided conversation where Claude asks what you want and how often.",
             "Claude will confirm the task name, the schedule, and exactly what it does before creating it — click \"Schedule\" to confirm.",
             "Always click \"Run now\" first to test a newly scheduled task manually, rather than waiting for its first automatic run — this is the same test-before-trust principle from every module before this one."
-          ]
+          ],
+          "outputVideo":"../public/videos/m08-s11.mp4"
         },
         {
           "id": "m08-s12", "type": "mcq",
@@ -1619,7 +1628,8 @@
             "Click to start a new project, and give it a real name.",
             "Choose \"Wireframe\" (fast, rough structure — good for exploring an idea) or \"High Fidelity\" (polished, closer to a finished look) — for this exercise, choose Wireframe first, since you can always refine toward High Fidelity once the structure is right.",
             "Click Create. You'll land on the canvas — your prompt goes on the left, the live design appears on the right."
-          ]
+          ],
+          "outputVideo":"../public/videos/m09-s04.mp4"
         },
         {
           "id": "m09-s05", "type": "text", "visuals": 1,
@@ -1655,7 +1665,8 @@
             "Click it, then mark directly on the prototype — circle, box, or point at the specific area you want changed.",
             "Type your instruction describing just that change — e.g. \"make this heading larger\" or \"change this button color to match the brand.\"",
             "Send it. Claude Design applies the change precisely to the marked area, without regenerating the whole layout."
-          ]
+          ],
+          "outputVideo":"../public/videos/m09-s08.mp4"
         },
         {
           "id": "m09-s09", "type": "prompt_and_output", "tool": "Claude", "visuals": 1,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Box, Button, Collapse, Drawer, IconButton, LinearProgress, Snackbar, Tooltip, Typography, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -28,6 +28,28 @@ import type { Module, Screen } from '../types';
 import { stripMarkup } from '../utils/text';
 
 const SIDEBAR_W = 328;
+/** Reading column width: fills small screens, then grows a little on big monitors. */
+const CONTENT_W = { xs: '100%', lg: 820, xl: 940 };
+
+/** Height of the sticky header (it changes with screen size), so the sidebar can fill exactly the rest of the screen. */
+function useElementHeight<T extends HTMLElement>(fallback: number) {
+  const ref = useRef<T>(null);
+  const [h, setH] = useState(fallback);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const read = () => setH(Math.round(el.getBoundingClientRect().height));
+    read();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', read);
+      return () => window.removeEventListener('resize', read);
+    }
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, h] as const;
+}
 
 /** Short label for a screen in the sidebar. */
 function navLabel(s: Screen): string {
@@ -152,6 +174,7 @@ export default function Player() {
   const [side, setSide] = useState(true);
   const [confirm, setConfirm] = useState(false);
   const [toast, setToast] = useState('');
+  const [headerRef, headerH] = useElementHeight<HTMLElement>(100);
 
   const idx = indexById[screenId];
   const entry = flat[idx ?? 0];
@@ -209,8 +232,8 @@ export default function Player() {
       <Background />
       <ScrollUI bottom={96} />
 
-      <Box component="header" sx={(t) => ({ position: 'sticky', top: 0, zIndex: 1100, borderBottom: `1px solid ${t.tx.line}`, background: t.tx.surface, backdropFilter: 'blur(22px) saturate(160%)' })}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: { xs: 1.5, md: 3 }, py: 1 }}>
+      <Box component="header" ref={headerRef} sx={(t) => ({ position: 'sticky', top: 0, zIndex: 1100, borderBottom: `1px solid ${t.tx.line}`, background: t.tx.surface, backdropFilter: 'blur(22px) saturate(160%)' })}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.25, sm: 1 }, px: { xs: 1, sm: 1.5, md: 3 }, py: 1, '& .MuiIconButton-root': { p: { xs: 0.75, sm: 1 } } }}>
           <IconButton aria-label="Contents" onClick={() => (wide ? setSide((v) => !v) : setDrawer(true))}>
             <MenuRoundedIcon />
           </IconButton>
@@ -228,7 +251,7 @@ export default function Player() {
             )}
           </Box>
           <Box sx={{ flexGrow: { xs: 1, sm: 0 } }} />
-          <Box sx={(t) => ({ display: 'flex', alignItems: 'center', gap: 0.5, px: 1.25, py: 0.5, borderRadius: 999, fontWeight: 800, fontSize: 13, border: `1px solid ${t.tx.hl}`, color: t.tx.hl, background: t.tx.glow, '& svg': { fontSize: 17, animation: 'txbob 2.4s ease-in-out infinite' } })}>
+          <Box sx={(t) => ({ display: 'flex', alignItems: 'center', gap: 0.5, px: { xs: 0.9, sm: 1.25 }, py: 0.5, mx: { xs: 0.25, sm: 0 }, borderRadius: 999, fontWeight: 800, fontSize: { xs: 12, sm: 13 }, whiteSpace: 'nowrap', border: `1px solid ${t.tx.hl}`, color: t.tx.hl, background: t.tx.glow, '& svg': { fontSize: 17, animation: 'txbob 2.4s ease-in-out infinite' } })}>
             <LocalFireDepartmentRoundedIcon />
             {xp()} XP
           </Box>
@@ -250,20 +273,20 @@ export default function Player() {
 
       <Box sx={{ display: 'flex', position: 'relative', zIndex: 1, flexGrow: 1 }}>
         {wide ? (
-          <Box component="aside" sx={{ flex: 'none', width: side ? SIDEBAR_W : 0, transition: 'width .35s cubic-bezier(.2,.8,.2,1)', overflow: 'hidden' }}>
-            <Box className="tx-scroll" sx={{ position: 'sticky', top: 100, width: SIDEBAR_W, height: 'calc(100dvh - 100px)', overflowY: 'auto', overscrollBehavior: 'contain', pb: 12, scrollbarGutter: 'stable', maskImage: 'linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 40px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 40px), transparent 100%)' }}>{sidebar}</Box>
+          <Box component="aside" sx={{ flex: 'none', alignSelf: 'flex-start', position: 'sticky', top: headerH, width: side ? SIDEBAR_W : 0, height: `calc(100dvh - ${headerH}px)`, transition: 'width .35s cubic-bezier(.2,.8,.2,1)', overflow: 'hidden' }}>
+            <Box className="tx-scroll" sx={{ width: SIDEBAR_W, height: '100%', overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', pb: 1.5 }}>{sidebar}</Box>
           </Box>
         ) : (
-          <Drawer open={drawer} onClose={() => setDrawer(false)} PaperProps={{ sx: { width: SIDEBAR_W, maxWidth: '88vw' } }}>
-            <Box sx={{ p: 2, pb: 0 }}>
+          <Drawer open={drawer} onClose={() => setDrawer(false)} ModalProps={{ keepMounted: false }} PaperProps={{ sx: { width: SIDEBAR_W, maxWidth: '88vw', height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' } }}>
+            <Box sx={{ flex: 'none', p: 2, pb: 0.5 }}>
               <Logo size={34} />
             </Box>
-            {sidebar}
+            <Box className="tx-scroll" sx={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', pb: 'max(12px, env(safe-area-inset-bottom))' }}>{sidebar}</Box>
           </Drawer>
         )}
 
-        <Box component="main" sx={{ flexGrow: 1, minWidth: 0, px: { xs: 1.5, sm: 3 }, pt: { xs: 3, sm: 5 }, pb: 16 }}>
-          <Box sx={{ maxWidth: 820, mx: 'auto' }}>
+        <Box component="main" sx={{ flexGrow: 1, minWidth: 0, px: { xs: 1.5, sm: 3, lg: 4 }, pt: { xs: 2.5, sm: 4, md: 5 }, pb: { xs: 14, sm: 16 } }}>
+          <Box sx={{ maxWidth: CONTENT_W, mx: 'auto', minWidth: 0 }}>
             {!synthetic && narrationText && (
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mb: 1 }}>
                 <Tooltip title={narr.speaking ? 'Pause narration' : 'Play narration'}>
@@ -297,21 +320,21 @@ export default function Player() {
 
       {!synthetic && (
         <Box component="footer" sx={(t) => ({ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 1100, borderTop: `1px solid ${t.tx.line}`, background: t.tx.surface, backdropFilter: 'blur(22px) saturate(160%)', pl: { lg: side ? `${SIDEBAR_W}px` : 0 }, transition: 'padding-left .35s cubic-bezier(.2,.8,.2,1)' })}>
-          <Box sx={{ maxWidth: 820, mx: 'auto', display: 'flex', alignItems: 'center', gap: 2, px: { xs: 1.5, sm: 3 }, py: 1.25 }}>
-            <Button variant="outlined" startIcon={<ArrowBackRoundedIcon />} disabled={!prev} onClick={() => prev && go(prev.screen.id)}>
-              Back
+          <Box sx={{ maxWidth: CONTENT_W, mx: 'auto', display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, px: { xs: 1.5, sm: 3, lg: 4 }, py: 1.25, pb: 'max(10px, env(safe-area-inset-bottom))' }}>
+            <Button variant="outlined" aria-label="Back" startIcon={<ArrowBackRoundedIcon />} disabled={!prev} onClick={() => prev && go(prev.screen.id)} sx={{ flex: 'none', minWidth: { xs: 44, sm: 64 }, px: { xs: 0, sm: 2.25 }, '& .MuiButton-startIcon': { m: { xs: 0, sm: '0 8px 0 -4px' } } }}>
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Back</Box>
             </Button>
-            <Box sx={{ flexGrow: 1 }}>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
               <Box sx={(t) => ({ height: 8, borderRadius: 8, background: t.tx.line, overflow: 'hidden' })}>
                 <Box sx={(t) => ({ height: '100%', width: `${pct}%`, borderRadius: 8, transition: 'width .6s cubic-bezier(.2,.8,.2,1)', backgroundColor: t.tx.hl, backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,.35) 25%, transparent 25% 50%, rgba(255,255,255,.35) 50% 75%, transparent 75%)', backgroundSize: '20px 20px', animation: 'txstripes 1s linear infinite' })} />
               </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+              <Typography noWrap variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block' }}>
                 {pct}% of the course
               </Typography>
             </Box>
             <Tooltip title={canNext ? '' : 'Answer this check correctly to continue'}>
               <span>
-                <Button variant="contained" endIcon={<ArrowForwardRoundedIcon />} disabled={!canNext || !next} onClick={() => next && go(next.screen.id)}>
+                <Button variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ flex: 'none', px: { xs: 2, sm: 2.25 } }} disabled={!canNext || !next} onClick={() => next && go(next.screen.id)}>
                   Continue
                 </Button>
               </span>

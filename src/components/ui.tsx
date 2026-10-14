@@ -5,7 +5,7 @@ import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
-import { mediaFor } from '../data/courseData';
+import { mediaFor, type VideoSource } from '../data/courseData';
 import { CLAUDE_PATH } from '../utils/claudeMark';
 import { stripMarkup } from '../utils/text';
 import type { Screen } from '../types';
@@ -208,20 +208,41 @@ function Placeholder({ screen }: { screen?: Screen }) {
   );
 }
 
+/** Responsive 16:9 video: a YouTube embed, or a file from /public/videos with the browser's own controls. */
+function VideoPlayer({ video, title, onFail }: { video: VideoSource; title: string; onFail: () => void }) {
+  const frame = (t: Theme) => ({ position: 'relative' as const, width: '100%', overflow: 'hidden', borderRadius: { xs: '12px', sm: '16px' }, border: `1px solid ${t.tx.line}`, boxShadow: `0 24px 60px ${t.tx.glow}`, bgcolor: '#000', lineHeight: 0 });
+  if (video.kind === 'youtube') {
+    return (
+      <Box sx={{ display: 'grid', gap: 0.75 }}>
+        <Box sx={(t) => ({ ...frame(t), aspectRatio: '16 / 9' })}>
+          <Box component="iframe" src={video.embed} title={title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
+        </Box>
+        <Typography component="a" href={video.watch} target="_blank" rel="noopener noreferrer" variant="caption" color="text.secondary" sx={{ justifySelf: 'end', display: 'inline-flex', alignItems: 'center', gap: 0.5, fontWeight: 700, textDecoration: 'none', '&:hover': { color: 'secondary.main' }, '& svg': { fontSize: 14 } }}>
+          Watch on YouTube <OpenInNewRoundedIcon />
+        </Typography>
+      </Box>
+    );
+  }
+  return (
+    <Box sx={(t) => frame(t)}>
+      <Box component="video" src={video.src} controls playsInline preload="metadata" onError={onFail} sx={{ width: '100%', maxHeight: '78dvh', display: 'block', bgcolor: '#000' }} />
+    </Box>
+  );
+}
+
 /** The screenshot / video area of a screen. Falls back to a placeholder when no file is available. */
 export function MediaBlock({ screen }: { screen: Screen }) {
   const media = mediaFor(screen);
   const [failed, setFailed] = useState<Record<string, boolean>>({});
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
-  const [open, setOpen] = useState<{ src?: string; video?: string } | null>(null);
+  const [open, setOpen] = useState<{ src?: string } | null>(null);
   if (!media) return <Placeholder screen={screen} />;
   const images = media.images.filter((s) => !failed[s]);
-  if (!images.length && !media.video) return <Placeholder screen={screen} />;
+  const video = media.video && !failed['video'] ? media.video : undefined;
+  if (!images.length && !video) return <Placeholder screen={screen} />;
   return (
     <Box sx={{ my: 2.5, display: 'grid', gap: 2 }}>
-      {media.video && (
-        <Box component="video" src={media.video} muted playsInline preload="metadata" onClick={() => setOpen({ video: media.video })} sx={(t) => ({ width: '100%', borderRadius: '16px', border: `1px solid ${t.tx.line}`, cursor: 'zoom-in', display: 'block' })} />
-      )}
+      {video && <VideoPlayer video={video} title={screen.heading ? stripMarkup(screen.heading) : screen.tool || 'Output video'} onFail={() => setFailed((f) => ({ ...f, video: true }))} />}
       {images.map((src) => (
         <Box
           key={src}
@@ -247,7 +268,7 @@ export function MediaBlock({ screen }: { screen: Screen }) {
           />
         </Box>
       ))}
-      <Lightbox open={!!open} onClose={() => setOpen(null)} src={open?.src} video={open?.video} />
+      <Lightbox open={!!open} onClose={() => setOpen(null)} src={open?.src} />
     </Box>
   );
 }
