@@ -4,9 +4,9 @@ import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import { mediaFor, type VideoSource } from '../data/courseData';
-import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded';
 import { CLAUDE_PATH } from '../utils/claudeMark';
 import { stripMarkup } from '../utils/text';
 import type { Screen } from '../types';
@@ -159,19 +159,19 @@ export function TypeWriter({ text, speed = 14 }: { text: string; speed?: number 
   );
 }
 
-/** Round magnifier badge that fades in over its (position: relative) parent on hover / keyboard focus. Always visible on touch screens. */
-function MagnifyOverlay() {
+/** Round play badge that fades in over its (position: relative) parent on hover / keyboard focus. Always visible on touch screens. */
+function PlayOverlay() {
   return (
     <Box
       aria-hidden
-      className="tx-magnify"
+      className="tx-play"
       sx={{
         position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none', opacity: 0, background: 'rgba(8,12,28,.28)', transition: 'opacity .25s',
         '@media (hover: none)': { opacity: 1, background: 'transparent', placeItems: 'end end', p: 1.5 },
       }}
     >
       <Box sx={{ width: 56, height: 56, borderRadius: '50%', display: 'grid', placeItems: 'center', color: '#fff', bgcolor: 'rgba(10,16,34,.72)', border: '1px solid rgba(255,255,255,.35)', backdropFilter: 'blur(6px)', boxShadow: '0 10px 30px rgba(0,0,0,.4)', transform: 'scale(.85)', transition: 'transform .3s cubic-bezier(.34,1.56,.64,1)', '.tx-media:hover &, .tx-media:focus-visible &': { transform: 'scale(1)' }, '@media (hover: none)': { width: 40, height: 40, transform: 'none' } }}>
-        <PlayArrowRoundedIcon sx={{ fontSize: 30, '@media (hover: none)': { fontSize: 22 },color:"#F5B93F" }} />
+        <PlayArrowRoundedIcon sx={{ fontSize: 30, color: '#F5B93F', '@media (hover: none)': { fontSize: 22 } }} />
       </Box>
     </Box>
   );
@@ -247,7 +247,7 @@ function VideoPlayer({ video, title, onFail, onOpen }: { video: VideoSource; tit
       aria-label={`Play video: ${title}`}
       sx={(t) => ({
         all: 'unset', cursor: 'zoom-in', position: 'relative', display: 'block', width: '100%', boxSizing: 'border-box', overflow: 'hidden', aspectRatio: '16 / 9', borderRadius: '16px', border: `1px solid ${t.tx.line}`, boxShadow: `0 24px 60px ${t.tx.glow}`, bgcolor: '#000',
-        '&:focus-visible': { outline: `2px solid ${t.tx.hl}`, outlineOffset: 3 }, '&:hover .tx-thumb': { transform: 'scale(1.015)' }, '&:hover .tx-magnify, &:focus-visible .tx-magnify': { opacity: 1 },
+        '&:focus-visible': { outline: `2px solid ${t.tx.hl}`, outlineOffset: 3 }, '&:hover .tx-thumb': { transform: 'scale(1.015)' }, '&:hover .tx-play, &:focus-visible .tx-play': { opacity: 1 },
       })}
     >
       {video.kind === 'youtube' ? (
@@ -256,7 +256,7 @@ function VideoPlayer({ video, title, onFail, onOpen }: { video: VideoSource; tit
         // "#t=0.1" makes the browser paint a real frame as the thumbnail instead of a black box.
         <Box className="tx-thumb" component="video" src={`${video.src}#t=0.1`} muted playsInline preload="metadata" tabIndex={-1} onError={onFail} sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none', transition: 'transform .6s cubic-bezier(.2,.8,.2,1)' }} />
       )}
-      <MagnifyOverlay />
+      <PlayOverlay />
     </Box>
   );
 }
@@ -279,13 +279,12 @@ export function MediaBlock({ screen }: { screen: Screen }) {
           key={src}
           component="button"
           type="button"
-          className="tx-media"
           onClick={() => setOpen({ src })}
           aria-label="Enlarge image"
           sx={(t) => ({
-            all: 'unset', cursor: 'zoom-in', position: 'relative', display: 'block', boxSizing: 'border-box', overflow: 'hidden', borderRadius: '16px', border: `1px solid ${t.tx.line}`, boxShadow: `0 24px 60px ${t.tx.glow}`, minHeight: loaded[src] ? 0 : 160,
+            all: 'unset', cursor: 'zoom-in', display: 'block', overflow: 'hidden', borderRadius: '16px', border: `1px solid ${t.tx.line}`, boxShadow: `0 24px 60px ${t.tx.glow}`, minHeight: loaded[src] ? 0 : 160,
             background: loaded[src] ? 'transparent' : `linear-gradient(90deg, ${t.tx.surface}, ${t.tx.line}, ${t.tx.surface})`, backgroundSize: '800px 100%', animation: loaded[src] ? 'none' : 'txshimmer 1.3s linear infinite',
-            '&:focus-visible': { outline: `2px solid ${t.tx.hl}`, outlineOffset: 3 }, '&:hover img': { transform: 'scale(1.015)' }, '&:hover .tx-magnify, &:focus-visible .tx-magnify': { opacity: 1 },
+            '&:focus-visible': { outline: `2px solid ${t.tx.hl}`, outlineOffset: 3 }, '&:hover img': { transform: 'scale(1.015)' }
           })}
         >
           <Box
@@ -298,7 +297,6 @@ export function MediaBlock({ screen }: { screen: Screen }) {
             onError={() => setFailed((f) => ({ ...f, [src]: true }))}
             sx={{ width: '100%', display: 'block', opacity: loaded[src] ? 1 : 0, transition: 'opacity .4s, transform .6s cubic-bezier(.2,.8,.2,1)' }}
           />
-          <MagnifyOverlay />
         </Box>
       ))}
       <Lightbox open={!!open} onClose={() => setOpen(null)} src={open?.src} video={open?.video} />

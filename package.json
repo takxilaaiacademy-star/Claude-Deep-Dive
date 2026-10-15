@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "scorm": "vite build && node scripts/scorm-manifest.mjs",
+    "scorm": "vite build --mode scorm && node scripts/scorm-manifest.mjs",
     "check:images": "node scripts/check-images.mjs",
     "predev": "node scripts/check-images.mjs",
     "prebuild": "node scripts/check-images.mjs"
