@@ -25,12 +25,53 @@
       @keyframes txbootspin { to { transform: rotate(360deg); } }
       @keyframes txbootbar { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
     </style>
+
+    <!--
+      Theme sync with the Takxila site (the page that embeds this one in an iframe).
+      localStorage is not shared between different domains, so the Takxila site sends the theme here:
+        1) ?theme=dark|light in the URL  -> used for the first paint
+        2) postMessage {type:'tx-theme'}  -> used whenever the learner switches theme on the Takxila site
+      Opened on its own (not inside the Takxila site), it falls back to the saved theme / system theme as before.
+    -->
     <script>
-      try {
-        var saved = localStorage.getItem('tx_theme');
-        var light = saved ? JSON.parse(saved) === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
-        if (light) document.documentElement.dataset.theme = 'light';
-      } catch (e) {}
+      (function () {
+        var KEY = 'tx_theme';
+        var root = document.documentElement;
+
+        function apply(mode, live) {
+          if (mode !== 'dark' && mode !== 'light') return;
+          try { localStorage.setItem(KEY, JSON.stringify(mode)); } catch (e) {}
+          root.dataset.theme = mode;
+          root.style.colorScheme = mode;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', mode === 'light' ? '#eef1fb' : '#0a1022');
+          if (live) {
+            // Lets the React app (and anything listening to localStorage) pick up the change.
+            try {
+              window.dispatchEvent(new StorageEvent('storage', { key: KEY, newValue: JSON.stringify(mode), storageArea: localStorage }));
+            } catch (e) {}
+            window.dispatchEvent(new CustomEvent('tx-theme', { detail: mode }));
+          }
+        }
+
+        // First paint: URL value wins, then the saved value, then the system setting.
+        try {
+          var fromUrl = new URLSearchParams(location.search).get('theme');
+          if (fromUrl === 'dark' || fromUrl === 'light') {
+            apply(fromUrl, false);
+          } else {
+            var saved = localStorage.getItem(KEY);
+            var light = saved ? JSON.parse(saved) === 'light' : window.matchMedia('(prefers-color-scheme: light)').matches;
+            if (light) root.dataset.theme = 'light';
+          }
+        } catch (e) {}
+
+        // Live changes from the Takxila site.
+        window.addEventListener('message', function (e) {
+          var d = e.data;
+          if (d && d.type === 'tx-theme') apply(d.theme || d.mode, true);
+        });
+      })();
     </script>
   </head>
   <body>
